@@ -100,8 +100,11 @@ class Artificial():
     def log_out(self):
         end_time = time.perf_counter()
 
-        print(f"time taken to generate response:- {end_time - self.start_time:.4f}"
-              f"ram consumed by this is :- {self.final_ram - self.initial_ram}")
+        total_ram = self.ollama_server_pid_ram + python_script_pid_ram
+
+        self.my_console.print(f"\ntime taken to generate response:- {total_time_tacken:.4f}\n"
+                              f"ram consumed by this is :- {total_ram / (1024 ** 3):.2f} GB\n"
+                              f"tockens per second we got {self.get_tocken(total_time_tacken):.2f}", justify='center')
 
         self.ollama_server.terminate()
         self.ollama_server.wait()
