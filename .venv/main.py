@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+from rich import pretty, traceback, console
 
 
 class Artificial():
@@ -21,7 +22,6 @@ class Artificial():
         self.max_tockens = 200
         self.alive = '0'
 
-        self.connection()
         self._cleaned_up_flag = False
 
         self.start_time = None
@@ -44,8 +44,7 @@ class Artificial():
 
         ollama_server_pid = psutil.Process(self.ollama_server.pid)
         if utilization:
-            server_process = psutil.Process(self.ollama_server.pid)
-            server_process.nice(psutil.REALTIME_PRIORITY_CLASS)  # set as realtime maxed high priority process
+            ollama_server_pid.nice(psutil.REALTIME_PRIORITY_CLASS)  # set as realtime maxed high priority process
 
             ollama_server_pid.cpu_affinity(
                 list(range(threads)))  # bind with no of cores/threads   max thread are fastest
@@ -197,7 +196,7 @@ def main():
         """
         ai.set_system_txt("you are technical support assistance")
         ai.set_user_message(user_query)
-        ai.options_change(0.5, 0.8, 10000, '0')
+        ai.options_change(0.5, 0.8, 100, '0')
 
         prompt = ("""
         
