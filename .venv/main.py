@@ -42,6 +42,15 @@ class Artificial():
 
         pass
 
+    def get_tocken(self, time_tacken):
+        # we can use no of words / time taken  = tocken generated
+        if time_tacken == 0:
+            return 0
+        else:
+            return self.tocken_generated / time_tacken
+        # average of tockens
+        pass
+
     def connection(self):
         try:
             # this for not printing the log of webserver of ollama server
