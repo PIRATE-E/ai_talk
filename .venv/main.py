@@ -30,7 +30,11 @@ class Artificial():
         pass
 
     def cpu_utilization(self, utilization):
-        self.initial_ram = psutil.virtual_memory().used  # to get memory space before load ollama
+        # get system information <cores/thread(logical cores)>
+        cores = psutil.cpu_count(logical=False)  # this is for core (logical+True=threads)
+        threads = psutil.cpu_count(logical=True)
+
+        ollama_server_pid = psutil.Process(self.ollama_server.pid)
         if utilization:
             server_process = psutil.Process(self.ollama_server.pid)
             server_process.nice(psutil.REALTIME_PRIORITY_CLASS)  # set as realtime maxed high priority process
