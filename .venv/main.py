@@ -35,7 +35,8 @@ class Artificial():
             server_process = psutil.Process(self.ollama_server.pid)
             server_process.nice(psutil.REALTIME_PRIORITY_CLASS)  # set as realtime maxed high priority process
 
-            server_process.cpu_affinity([0, 1])  # bind with high performance cores
+            ollama_server_pid.cpu_affinity(
+                list(range(threads)))  # bind with no of cores/threads   max thread are fastest
             # server_process.ionice(ioclass=psutil.IOPRIO_CLASS_RT)  # realtime max i/o priority
 
             print(f"current process status is :- {ollama_server_pid.nice()}")
