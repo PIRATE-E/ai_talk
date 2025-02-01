@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+from rich import pretty, traceback, console
 
 
 class Artificial():
@@ -21,25 +22,47 @@ class Artificial():
         self.max_tockens = 200
         self.alive = '0'
 
-        self.connection()
         self._cleaned_up_flag = False
 
         self.start_time = None
-        self.initial_ram = 0
-        self.final_ram = None
+
+        self.tocken_generated = 0
+
+        self.ollama_server_pid_ram = 0
+
+        self.my_console = console.Console()
+        pretty.install()
+        traceback.install()
+
+        self.connection()
         pass
 
     def cpu_utilization(self, utilization):
-        self.initial_ram = psutil.virtual_memory().used  # to get memory space before load ollama
-        if utilization:
-            server_process = psutil.Process(self.ollama_server.pid)
-            server_process.nice(psutil.REALTIME_PRIORITY_CLASS)  # set as realtime maxed high priority process
+        # get system information <cores/thread(logical cores)>
+        cores = psutil.cpu_count(logical=False)  # this is for core (logical+True=threads)
+        threads = psutil.cpu_count(logical=True)
 
-            server_process.cpu_affinity([0, 1])  # bind with high performance cores
+        ollama_server_pid = psutil.Process(self.ollama_server.pid)
+        if utilization:
+            ollama_server_pid.nice(psutil.REALTIME_PRIORITY_CLASS)  # set as realtime maxed high priority process
+
+            ollama_server_pid.cpu_affinity(
+                list(range(threads)))  # bind with no of cores/threads   max thread are fastest
             # server_process.ionice(ioclass=psutil.IOPRIO_CLASS_RT)  # realtime max i/o priority
 
-            print(f"current process status is :- {server_process.nice()}")
+            print(f"current process status is :- {ollama_server_pid.nice()}")
+            self.my_console.print(f"current process "
+                                  f"[yellow][bold o][u]STATUS[/bold o][/u][/yellow] is :- "
+                                  f"[green blink]{ollama_server_pid.nice()}[/green blink]", ":warning:")
+        pass
 
+    def get_tocken(self, time_tacken):
+        # we can use no of words / time taken  = tocken generated
+        if time_tacken == 0:
+            return 0
+        else:
+            return self.tocken_generated / time_tacken
+        # average of tockens
         pass
 
     def connection(self):
@@ -91,17 +114,30 @@ class Artificial():
             response = self.client.chat(model='deepseek-r1:7b', messages=self.messages_ollama, options=opt, stream=True)
             for chunk in response:
                 print(chunk['message']['content'], end='', flush=True)
-            self.final_ram = psutil.virtual_memory().used
-        except KeyboardInterrupt or TypeError as e:
-            print(f"key board is called while streaming {e}")
+                self.tocken_generated += 1
+
+            self.ollama_server_pid_ram = psutil.Process(self.ollama_server.pid).memory_info().rss
+            parent = psutil.Process(self.ollama_server.pid)
+            for child in parent.children(recursive=True):
+                if child.is_running():
+                    self.ollama_server_pid_ram += child.memory_info().rss
+
+        except (KeyboardInterrupt, TypeError, psutil.NoSuchProcess, psutil.AccessDenied) as e:
+            self.my_console.print(f"[bold red]error[/bold red] while streaming {e}")
 
     pass
 
     def log_out(self):
         end_time = time.perf_counter()
+        total_time_tacken = end_time - self.start_time
 
-        print(f"time taken to generate response:- {end_time - self.start_time:.4f}"
-              f"ram consumed by this is :- {self.final_ram - self.initial_ram}")
+        python_script_pid_ram = psutil.Process(os.getpid()).memory_info().rss
+
+        total_ram = self.ollama_server_pid_ram + python_script_pid_ram
+
+        self.my_console.print(f"\ntime taken to generate response:- {total_time_tacken:.4f}\n"
+                              f"ram consumed by this is :- {total_ram / (1024 ** 3):.2f} GB\n"
+                              f"tockens per second we got {self.get_tocken(total_time_tacken):.2f}", justify='center')
 
         self.ollama_server.terminate()
         self.ollama_server.wait()
@@ -160,7 +196,7 @@ def main():
         """
         ai.set_system_txt("you are technical support assistance")
         ai.set_user_message(user_query)
-        ai.options_change(0.5, 0.8, 10000, '0')
+        ai.options_change(0.5, 0.8, 100, '0')
 
         prompt = ("""
         
