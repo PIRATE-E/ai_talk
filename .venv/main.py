@@ -99,6 +99,9 @@ class Artificial():
 
     def log_out(self):
         end_time = time.perf_counter()
+        total_time_tacken = end_time - self.start_time
+
+        python_script_pid_ram = psutil.Process(os.getpid()).memory_info().rss
 
         total_ram = self.ollama_server_pid_ram + python_script_pid_ram
 
