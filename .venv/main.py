@@ -91,9 +91,16 @@ class Artificial():
             response = self.client.chat(model='deepseek-r1:7b', messages=self.messages_ollama, options=opt, stream=True)
             for chunk in response:
                 print(chunk['message']['content'], end='', flush=True)
-            self.final_ram = psutil.virtual_memory().used
-        except KeyboardInterrupt or TypeError as e:
-            print(f"key board is called while streaming {e}")
+                self.tocken_generated += 1
+
+            self.ollama_server_pid_ram = psutil.Process(self.ollama_server.pid).memory_info().rss
+            parent = psutil.Process(self.ollama_server.pid)
+            for child in parent.children(recursive=True):
+                if child.is_running():
+                    self.ollama_server_pid_ram += child.memory_info().rss
+
+        except (KeyboardInterrupt, TypeError, psutil.NoSuchProcess, psutil.AccessDenied) as e:
+            self.my_console.print(f"[bold red]error[/bold red] while streaming {e}")
 
     pass
 
