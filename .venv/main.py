@@ -25,8 +25,16 @@ class Artificial():
         self._cleaned_up_flag = False
 
         self.start_time = None
-        self.initial_ram = 0
-        self.final_ram = None
+
+        self.tocken_generated = 0
+
+        self.ollama_server_pid_ram = 0
+
+        self.my_console = console.Console()
+        pretty.install()
+        traceback.install()
+
+        self.connection()
         pass
 
     def cpu_utilization(self, utilization):
