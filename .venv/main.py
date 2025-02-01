@@ -38,8 +38,10 @@ class Artificial():
             server_process.cpu_affinity([0, 1])  # bind with high performance cores
             # server_process.ionice(ioclass=psutil.IOPRIO_CLASS_RT)  # realtime max i/o priority
 
-            print(f"current process status is :- {server_process.nice()}")
-
+            print(f"current process status is :- {ollama_server_pid.nice()}")
+            self.my_console.print(f"current process "
+                                  f"[yellow][bold o][u]STATUS[/bold o][/u][/yellow] is :- "
+                                  f"[green blink]{ollama_server_pid.nice()}[/green blink]", ":warning:")
         pass
 
     def get_tocken(self, time_tacken):
