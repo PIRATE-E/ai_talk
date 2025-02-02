@@ -7,8 +7,10 @@ import signal
 import subprocess
 import sys
 import time
-from rich import pretty, traceback, console
-
+from rich import pretty, traceback, console, print
+from rich.padding import Padding
+from rich.panel import Panel
+from rich.prompt import Prompt
 
 class Artificial():
 
