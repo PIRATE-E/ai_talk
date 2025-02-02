@@ -268,7 +268,7 @@ class Artificial():
         panel_prompt = Panel.fit(f"[bold yellow]{prompt}", style='red')
         print(panel_prompt, ":backhand_index_pointing_down:")
         if prompt == "exit(0)":
-            self.cleanUp()
+            sys.exit()
         else:
             while (True):
                 self.set_user_message(prompt, True)
