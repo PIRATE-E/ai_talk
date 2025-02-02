@@ -90,6 +90,14 @@ class Artificial():
         self.messages_ollama.append({'role': 'system', 'content': content})
 
     def set_user_message(self, query, autoRun=False):
+        """
+        actually i have to make message_ollama_list upto length of 2 because after appending the user prompt it
+        start the explaining about previous user prompt
+        :param query:
+        :param autoRun:
+        :return:
+        """
+        if len(self.messages_ollama) >= 2: self.messages_ollama.pop()
         self.messages_ollama.append({'role': 'user', 'content': query})
 
         if autoRun:
