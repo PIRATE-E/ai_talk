@@ -142,10 +142,12 @@ class Artificial():
         self.ollama_server.terminate()
         self.ollama_server.wait()
 
-        if os.name == "nt":
-            try:
-                result = subprocess.run(["taskkill", "/F", "/IM", "ollama_llama_server.exe"], check=True,
-                                        capture_output=True)
+        if os.name == "nt":  # windows
+            for proc in psutil.process_iter(['pid', 'name']):
+                if proc.name() == "ollama_llama_server.exe":
+                    try:
+                        result = subprocess.run(["taskkill", "/F", "/IM", "ollama_llama_server.exe"], check=True,
+                                                capture_output=True)
 
                 time.sleep(5)
                 print(result.stdout, result.stderr)
@@ -171,6 +173,63 @@ class Artificial():
         print(f"\n🛑 Received signal {signum}. Exiting gracefully...")
         self.cleanUp()
         exit()
+        pass
+
+    def welcome(self):
+        # here i have to tell that this is chat bot plz enter your desired settings and then after setting up
+        """
+        like :-
+        "temperature": self.temp,
+            "keep_alive": self.alive,
+            "top_p": self.top_p,
+            "num_predict": self.max_tockens
+        :return:
+        """
+        # you can chat with this bot
+        pad = Padding("[blink red] welcome to smart AI", (1, 1, 1, 10))
+        self.my_console.rule("[blink red] welcome to smart AI",
+                             style="green", align='center')
+
+        self.my_console.rule("please set up your AI assistance personality", style="bold ")
+
+        choice_get = [
+            ["random", "strict", "entermediate"],
+            ["short", "long", "extreme"],
+            ["yes", "no"]
+        ]
+
+        choice_set = [
+            [1, 0, 0.5],
+            [200, 1500, 2000],
+            [True, False]
+        ]
+
+        temprature = Prompt.ask("Enter the desired output type", choices=choice_get[0], default="strict")
+
+        output_length = Prompt.ask("Enter the preferred length of output", choices=choice_get[1], default="short")
+
+        history = Prompt.ask("would you like to maintain history", choices=choice_get[2], default="no")
+
+        self.temp = choice_set[0][choice_get[0].index(temprature)]
+        self.max_tockens = choice_set[1][choice_get[1].index(output_length)]
+        # no feature related history
+        # now set it to options
+        pass
+
+    def handle_running(self):
+        # maintaining chatting loop till user wants to exit
+        prompt = Prompt.ask("enter your query :- {[bold yellow]for exit type exit(0)[/bold yellow]}", default="exit(0)",
+                            show_default=False)
+        panel_prompt = Panel.fit(f"[bold yellow]{prompt}", style='red')
+        print(panel_prompt, ":backhand_index_pointing_down:")
+        if prompt == "exit(0)":
+            self.cleanUp()
+        else:
+            while (True):
+                self.set_user_message(prompt, True)
+                self.response_information()
+
+                self.handle_running()
         pass
 
 
