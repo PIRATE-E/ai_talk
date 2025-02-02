@@ -246,22 +246,8 @@ def main():
     atexit.register(ai.cleanUp)
 
     try:
-        user_query = """
-        want to buy pc for me can you suggest me which requirement is suitable for me
-        dont use basic term i know i am computer science student  
-        suggest me terms that i should keep in mind 
-        i have to do heavy AI ML programming task like running/researching about dee[p seek model locally and   
-        android studio and using my pc to web scrap even use heavy application like unity and visual studio
-        """
-        ai.set_system_txt("you are technical support assistance")
-        ai.set_user_message(user_query)
-        ai.options_change(0.5, 0.8, 100, '0')
-
-        prompt = ("""
-        
-        """)
-
-        ai.set_user_message(prompt, True)
+        ai.set_system_txt("you are chat bot which is very straight to the point")
+        ai.handle_running()
     except Exception as e:
         print(e)
 
