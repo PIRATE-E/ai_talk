@@ -246,6 +246,21 @@ class Artificial():
         # now set it to options
         pass
 
+    def load_history(self):
+        if os.path.isfile('history.json'):
+
+            with open('history.json', 'r') as file:
+                self.history_dict = json.load(file)
+            # history dict has been set
+            # load prompt and display
+            prompt_ls = []
+            for key, prompt in self.history_dict.item():
+                print(prompt)
+        else:
+            print("[bold yellow underline]file doesnt exist")
+        pass
+    
+
     def handle_running(self):
         # maintaining chatting loop till user wants to exit
         prompt = Prompt.ask("enter your query :- {[bold yellow]for exit type exit(0)[/bold yellow]}", default="exit(0)",
