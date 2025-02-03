@@ -262,6 +262,21 @@ class Artificial():
                 self.history_dict = dict(json.load(r_file))
 
 
+    def show_history(self):
+        # now we have to display that do you want to see history if yes show it
+        if(Prompt.ask("do you want to see your chat history", choices=['y','n'], default='n')) != 'n':
+            #     here we will show table
+            table = Table(title="chat history", show_lines=True, header_style="bold blue")
+            table.add_column("prompt", no_wrap=False, header_style="bold blue")
+            table.add_column("response", no_wrap=False, justify='center', width=100, header_style='red', style='green')
+
+            for i in range(len((list(self.history_dict.values())))):
+                table.add_row(f"{list(self.history_dict.values())[i][0]}"
+                              ,f"{list(self.history_dict.values())[i][1]}")
+
+            self.my_console.print(table, justify='center')
+            pass
+        pass
     def dump_history(self):
         """
         to create file if not exist enter the prompt that user wrote and dump in json file
