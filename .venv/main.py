@@ -12,6 +12,7 @@ from rich import pretty, traceback, console, print
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.table import Table
 
 
 class Artificial():
