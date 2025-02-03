@@ -248,6 +248,7 @@ class Artificial():
         # history = Prompt.ask("would you like to maintain history", choices=choice_get[2], default="no")
 
         self.load_history()
+        self.show_history()
 
         self.temp = choice_set[0][choice_get[0].index(temprature)]
         self.max_tockens = choice_set[1][choice_get[1].index(output_length)]
