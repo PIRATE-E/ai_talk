@@ -1,5 +1,6 @@
 import atexit
 import ctypes
+import json
 import ollama
 import os
 import psutil
@@ -11,30 +12,43 @@ from rich import pretty, traceback, console, print
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.table import Table
+
 
 class Artificial():
 
     def __init__(self):
+
+        self.my_console = console.Console()
+        pretty.install()
+        traceback.install(show_locals=True)
+
         self.ollama_server = None
         self.client = None
-        self.messages_ollama = []
+        self.messages_ollama = []  # length must be 2 one is system-prompt second is user-prompt
 
         self.temp = 0.5
         self.top_p = 0.5
         self.max_tockens = 200
-        self.alive = '0'
+        self.alive = '-1'
 
         self._cleaned_up_flag = False
 
-        self.start_time = None
+        self.start_time = 0
 
         self.tocken_generated = 0
 
         self.ollama_server_pid_ram = 0
 
-        self.my_console = console.Console()
-        pretty.install()
-        traceback.install()
+        self.history_dict = {}  # some thing like
+        """
+        {
+        1: ['prompt', 'response'],
+        2: ['prompt2', 'response2']
+        }
+        """
+        self.prompt_response_list = []  # if user decided to add all chat before exit() [['prompt1','response1'],['prompt2','response2']]
+        self.last_prompt = None
 
         self.connection()
         pass
@@ -52,8 +66,7 @@ class Artificial():
                 list(range(threads)))  # bind with no of cores/threads   max thread are fastest
             # server_process.ionice(ioclass=psutil.IOPRIO_CLASS_RT)  # realtime max i/o priority
 
-            print(f"current process status is :- {ollama_server_pid.nice()}")
-            self.my_console.print(f"current process "
+            self.my_console.print(f"\tcurrent process "
                                   f"[yellow][bold o][u]STATUS[/bold o][/u][/yellow] is :- "
                                   f"[green blink]{ollama_server_pid.nice()}[/green blink]", ":warning:")
         pass
@@ -77,10 +90,6 @@ class Artificial():
             # self.ollama_server = subprocess.Popen(["ollama", "serve"])
 
             self.cpu_utilization(True)
-
-            # time.sleep(2)
-
-            # setting client
 
             self.client = ollama.Client()
 
@@ -121,10 +130,15 @@ class Artificial():
         }
         self.start_time = time.perf_counter()
         try:
+            response_str = ""
             response = self.client.chat(model='deepseek-r1:7b', messages=self.messages_ollama, options=opt, stream=True)
             for chunk in response:
                 print(chunk['message']['content'], end='', flush=True)
+                response_str += chunk['message']['content']
                 self.tocken_generated += 1
+
+            # append the p_r_list for dump
+            self.prompt_response_list.append([self.last_prompt, response_str])
 
             self.ollama_server_pid_ram = psutil.Process(self.ollama_server.pid).memory_info().rss
             parent = psutil.Process(self.ollama_server.pid)
@@ -133,7 +147,7 @@ class Artificial():
                     self.ollama_server_pid_ram += child.memory_info().rss
 
         except (KeyboardInterrupt, TypeError, psutil.NoSuchProcess, psutil.AccessDenied) as e:
-            self.my_console.print(f"[bold red]error[/bold red] while streaming {e}")
+            self.my_console.print(f"\n[bold red]error[/bold red] while streaming \t{e}")
 
     pass
 
@@ -152,22 +166,13 @@ class Artificial():
         self.my_console.print("\n[bold strike red on white]response over")
 
         self.my_console.print(Panel.fit(f"[bold] time taken to generate response:- {total_time_tacken:.4f}\n"
-                           f"ram consumed by this is :- {total_ram / (1024 ** 3):.2f} GB\n"
-                           f"tockens per second we got {self.get_tocken(total_time_tacken):.2f}"
-                           ,subtitle="information", subtitle_align='center', title="system and response", title_align='center', safe_box=False,
-                           padding=(1,10,1,10), highlight=True, style='red'),justify='center')
+                                        f"ram consumed by this is :- {total_ram / (1024 ** 3):.2f} GB\n"
+                                        f"tockens per second we got {self.get_tocken(total_time_tacken):.2f}"
+                                        , subtitle="information", subtitle_align='center', title="system and response",
+                                        title_align='center', safe_box=False,
+                                        padding=(1, 10, 1, 10), highlight=True, style='red'), justify='center')
 
     def log_out(self):
-        end_time = time.perf_counter()
-        total_time_tacken = end_time - self.start_time
-
-        python_script_pid_ram = psutil.Process(os.getpid()).memory_info().rss
-
-        total_ram = self.ollama_server_pid_ram + python_script_pid_ram
-
-        self.my_console.print(f"\ntime taken to generate response:- {total_time_tacken:.4f}\n"
-                              f"ram consumed by this is :- {total_ram / (1024 ** 3):.2f} GB\n"
-                              f"tockens per second we got {self.get_tocken(total_time_tacken):.2f}", justify='center')
 
         self.ollama_server.terminate()
         self.ollama_server.wait()
@@ -179,15 +184,17 @@ class Artificial():
                         result = subprocess.run(["taskkill", "/F", "/IM", "ollama_llama_server.exe"], check=True,
                                                 capture_output=True)
 
-                time.sleep(5)
-                print(result.stdout, result.stderr)
-            except subprocess.CalledProcessError as e:
-                if e.returncode == 128:
-                    print("server is already killed")
-                print(e)
+                        # time.sleep(5)
+                        print(result.stdout, result.stderr)
+                    except subprocess.CalledProcessError as e:
+                        if e.returncode == 128:
+                            print("server is already killed")
+                        print(e)
 
-        else:
+        else:  # mac/linux
             os.system("pkill -f ollama")
+
+        self.my_console.rule("[blink green]AI assistance has been close", style='red', align='center')
 
         pass
 
@@ -238,7 +245,11 @@ class Artificial():
 
         output_length = Prompt.ask("Enter the preferred length of output", choices=choice_get[1], default="short")
 
-        history = Prompt.ask("would you like to maintain history", choices=choice_get[2], default="no")
+        # here i have to show the history-previous prompt of the user and give option to add this history of not
+        # history = Prompt.ask("would you like to maintain history", choices=choice_get[2], default="no")
+
+        self.load_history()
+        self.show_history()
 
         self.temp = choice_set[0][choice_get[0].index(temprature)]
         self.max_tockens = choice_set[1][choice_get[1].index(output_length)]
@@ -246,16 +257,72 @@ class Artificial():
         # now set it to options
         pass
 
+    def load_history(self):
+        if not os.path.exists('history.json'):print("\n[bold yellow underline2]history file is not exist\n")
+        else:
+            with open('history.json', 'r') as r_file:
+                self.history_dict = dict(json.load(r_file))
+
+
+    def show_history(self):
+        # now we have to display that do you want to see history if yes show it
+        if(Prompt.ask("do you want to see your chat history", choices=['y','n'], default='n')) != 'n':
+            #     here we will show table
+            table = Table(title="chat history", show_lines=True, header_style="bold blue")
+            table.add_column("prompt", no_wrap=False, header_style="bold blue")
+            table.add_column("response", no_wrap=False, justify='center', width=100, header_style='red', style='green')
+
+            for i in range(len((list(self.history_dict.values())))):
+                table.add_row(f"{list(self.history_dict.values())[i][0]}"
+                              ,f"{list(self.history_dict.values())[i][1]}")
+
+            self.my_console.print(table, justify='center')
+            pass
+        pass
+    def dump_history(self):
+        """
+        to create file if not exist enter the prompt that user wrote and dump in json file
+        :return:
+        """
+        if Prompt.ask("do you want to save this chat into history", choices=['y', 'n'], default='n') == 'y':
+            # add to history
+            if os.path.exists('history.json'):
+                last_key_p_r_dict = int(list(self.history_dict.keys())[-1])
+                last_key_p_r_dict += 1  # atleast while updating history we add up on the writen one
+
+                for i in range(len(self.prompt_response_list)):
+                    # this will add [[prompt1,response1], [[prompt2, response2]] into hist_dict after its element
+                    self.history_dict.update({last_key_p_r_dict + i: self.prompt_response_list[i]})
+
+                with open('history.json', 'w') as file:
+                    json.dump(self.history_dict, file, indent=4)
+            else:
+                last_key_p_r_dict = 1
+
+                for i in range(len(self.prompt_response_list)):
+                    self.history_dict.update({last_key_p_r_dict+i:self.prompt_response_list[i]})
+
+                with open('history.json', 'w') as file:
+                    json.dump(self.history_dict, file, indent=4)
+            print("history has been saved")
+            pass
+
     def handle_running(self):
         # maintaining chatting loop till user wants to exit
-        prompt = Prompt.ask("enter your query :- {[bold yellow]for exit type exit(0)[/bold yellow]}", default="exit(0)",
+        prompt = Prompt.ask("enter your query :- {[bold yellow]for exit type exit(0)[/bold yellow]}",
+                            default="exit(0)",
                             show_default=False)
         panel_prompt = Panel.fit(f"[bold yellow]{prompt}", style='red')
         print(panel_prompt, ":backhand_index_pointing_down:")
         if prompt == "exit(0)":
-            self.cleanUp()
+            if self.last_prompt is None:  # we will check did user ask something before exit
+                sys.exit()
+            else:
+                self.dump_history()
+                sys.exit()
         else:
             while (True):
+                self.last_prompt = prompt
                 self.set_user_message(prompt, True)
                 self.response_information()
 
@@ -265,6 +332,7 @@ class Artificial():
 
 def main():
     ai = Artificial()
+    atexit.register(ai.cleanUp)
 
     try:
         signal.signal(signal.SIGINT, ai.handel_intrupt)
@@ -272,14 +340,12 @@ def main():
     except KeyboardInterrupt as e:
         print(e)
     pass
-
-    atexit.register(ai.cleanUp)
-
+    ai.welcome()
     try:
         ai.set_system_txt("you are chat bot which is very straight to the point")
-        ai.handle_running()
     except Exception as e:
         print(e)
+    ai.handle_running()
 
 
 def check_admin():
