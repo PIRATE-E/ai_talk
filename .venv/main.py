@@ -39,7 +39,7 @@ class Artificial():
 
         self.ollama_server_pid_ram = 0
 
-        self.history_dict: dict()  # some thing like
+        self.history_dict = {}  # some thing like
         """
         {
         1: ['prompt', 'response'],
@@ -129,11 +129,11 @@ class Artificial():
         }
         self.start_time = time.perf_counter()
         try:
-            response_str  = ""
+            response_str = ""
             response = self.client.chat(model='deepseek-r1:7b', messages=self.messages_ollama, options=opt, stream=True)
             for chunk in response:
                 print(chunk['message']['content'], end='', flush=True)
-                response_str+=chunk['message']['content']
+                response_str += chunk['message']['content']
                 self.tocken_generated += 1
 
             # append the p_r_list for dump
@@ -256,15 +256,7 @@ class Artificial():
         pass
 
     def load_history(self):
-        if os.path.isfile('history.json'):
-
-            with open('history.json', 'r') as file:
-                self.history_dict = json.load(file)
-            # history dict has been set
-            # load prompt and display
-            prompt_ls = []
-            for key, prompt in self.history_dict.item():
-                print(prompt)
+        if not os.path.exists('history.json'):print("\n[bold yellow underline2]history file is not exist\n")
         else:
             with open('history.json', 'r') as r_file:
                 self.history_dict = dict(json.load(r_file))
@@ -275,21 +267,38 @@ class Artificial():
         to create file if not exist enter the prompt that user wrote and dump in json file
         :return:
         """
-        if Prompt.ask("do you want to save this chat into history",choices=['y','n'],default='n') == 'y':
-            #add to history
-            print('history has been save !!')
-            print(self.prompt_response_list)
-            print(self.last_prompt)
-        pass
+        if Prompt.ask("do you want to save this chat into history", choices=['y', 'n'], default='n') == 'y':
+            # add to history
+            if os.path.exists('history.json'):
+                last_key_p_r_dict = int(list(self.history_dict.keys())[-1])
+                last_key_p_r_dict += 1  # atleast while updating history we add up on the writen one
+
+                for i in range(len(self.prompt_response_list)):
+                    # this will add [[prompt1,response1], [[prompt2, response2]] into hist_dict after its element
+                    self.history_dict.update({last_key_p_r_dict + i: self.prompt_response_list[i]})
+
+                with open('history.json', 'w') as file:
+                    json.dump(self.history_dict, file, indent=4)
+            else:
+                last_key_p_r_dict = 1
+
+                for i in range(len(self.prompt_response_list)):
+                    self.history_dict.update({last_key_p_r_dict+i:self.prompt_response_list[i]})
+
+                with open('history.json', 'w') as file:
+                    json.dump(self.history_dict, file, indent=4)
+            print("history has been saved")
+            pass
 
     def handle_running(self):
         # maintaining chatting loop till user wants to exit
-        prompt = Prompt.ask("enter your query :- {[bold yellow]for exit type exit(0)[/bold yellow]}", default="exit(0)",
+        prompt = Prompt.ask("enter your query :- {[bold yellow]for exit type exit(0)[/bold yellow]}",
+                            default="exit(0)",
                             show_default=False)
         panel_prompt = Panel.fit(f"[bold yellow]{prompt}", style='red')
         print(panel_prompt, ":backhand_index_pointing_down:")
         if prompt == "exit(0)":
-            if self.last_prompt is None: # we will check did user ask something before exit
+            if self.last_prompt is None:  # we will check did user ask something before exit
                 sys.exit()
             else:
                 self.dump_history()
@@ -317,9 +326,9 @@ def main():
     ai.welcome()
     try:
         ai.set_system_txt("you are chat bot which is very straight to the point")
-        ai.handle_running()
     except Exception as e:
         print(e)
+    ai.handle_running()
 
 
 def check_admin():
