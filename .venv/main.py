@@ -266,8 +266,9 @@ class Artificial():
             for key, prompt in self.history_dict.item():
                 print(prompt)
         else:
-            print("[bold yellow underline]file doesnt exist")
-        pass
+            with open('history.json', 'r') as r_file:
+                self.history_dict = dict(json.load(r_file))
+
 
     def dump_history(self):
         """
