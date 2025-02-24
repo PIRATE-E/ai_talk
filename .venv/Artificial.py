@@ -5,6 +5,7 @@ import subprocess
 import sys
 import time
 from history import histoty_ai
+from login import LoginAI
 from rich import pretty, traceback, console, print
 from rich.padding import Padding
 from rich.panel import Panel
@@ -267,6 +268,7 @@ class Artificial_AI():
         pad = Padding("[blink red] welcome to smart AI", (1, 1, 1, 10))
         self.my_console.rule("[blink red] welcome to smart AI",
                              style="green", align='center')
+        self.manageLogin()
 
         self.my_console.rule("please set up your AI assistance personality", style="bold ")
 

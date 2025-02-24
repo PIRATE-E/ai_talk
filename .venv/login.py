@@ -11,6 +11,7 @@ class LoginAI():
         self.cursor = self.conn.cursor()
 
         self.create_table()
+        self.userpresent = False # this flag for check that user is already exist or not
         pass
 
     def create_table(self):
@@ -40,6 +41,7 @@ class LoginAI():
         )
 
         if self.cursor.fetchone():
+            self.userpresent = True
             return False # user is already present
 
         salt = self._generate_salt()
