@@ -226,6 +226,33 @@ class Artificial_AI():
         exit()
         pass
 
+    def manageLogin(self):
+        login_obj = LoginAI()
+        if Prompt.ask("are you willing to login", choices=["yes", "no"], default="no") == 'yes':
+            self.my_console.print("[bold green]user is trying to login[/bold green]", justify='center')
+            username = Prompt.ask("\tenter your username")
+            password = Prompt.ask("\tenter your password", password=True)
+            if login_obj.login(username, password):
+                self.my_console.print("[bold green]logged in successfully[/bold green]")
+            else:
+                self.my_console.print("[bold red]login failed[/bold red]")
+                if Prompt.ask("try again", choices=["yes", "no"], default="no") == "yes":
+                    self.manageLogin()
+                sys.exit()
+        else:
+            self.my_console.print("[bold green]user is trying to signup[/bold green]", justify='center')
+            username = Prompt.ask("\tenter your username")
+            password = Prompt.ask("\tenter your password", password=True)
+            if login_obj.create_account(username, password):
+                self.my_console.print("[bold green]account created successfully[/bold green]")
+            else:
+                self.my_console.print("[bold red]account creation failed[/bold red]")
+                if login_obj.userpresent:
+                    self.my_console.print("[bold red]account already present[/bold red]")
+                if Prompt.ask("try again", choices=["yes", "no"], default="no") == "yes":
+                    self.manageLogin()
+                sys.exit()
+
     def welcome(self):
         # here i have to tell that this is chat bot plz enter your desired settings and then after setting up
         """
