@@ -1,17 +1,17 @@
-import sqlite3
+import base64
 import hashlib
 import secrets
-import base64
+import sqlite3
 
 
 class LoginAI():
+    _current_user = None
     def __init__(self, db_path="users.db"):
         self.db_path = db_path
         self.conn = sqlite3.connect(db_path)
         self.cursor = self.conn.cursor()
-
-        self.create_table()
-        self.userpresent = False # this flag for check that user is already exist or not
+        self.userpresent = False  # this flag for check that user is already exist or not
+        self.current_user = LoginAI._current_user
         pass
 
     def create_table(self):
@@ -25,6 +25,18 @@ class LoginAI():
                 )
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS chat_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT,
+                    prompt TEXT,
+                    response TEXT,
+                    FOREIGN KEY (username) REFERENCES users(username)
+                    )
+                """
+            )
+            conn.commit()
 
     def _generate_salt(self):
         # this method will called when we have to insert user into data base
@@ -42,7 +54,7 @@ class LoginAI():
 
         if self.cursor.fetchone():
             self.userpresent = True
-            return False # user is already present
+            return False  # user is already present
 
         salt = self._generate_salt()
         hashed_password = self._hash_password(password, salt)
@@ -57,7 +69,8 @@ class LoginAI():
         )
 
         self.conn.commit()
-        return True # account has been made
+        LoginAI._current_user = username
+        return True  # account has been made
 
     def login(self, username, password):
         with sqlite3.connect(self.db_path) as conn:
@@ -67,14 +80,20 @@ class LoginAI():
                 """, (username,)
             )
             row = self.cursor.fetchone()
-            if row: # user is present in the db
+            if row:  # user is present in the db
                 salt, hashed_password = row
                 salt = base64.b64decode(salt)
                 hashed_password = base64.b64decode(hashed_password)
                 if self._hash_password(password, salt) == hashed_password:
+                    self.current_user = username
+                    LoginAI._current_user = username
                     return True
                 else:
                     return False
 
             else:
                 return False
+
+    @classmethod
+    def get_username(cls):
+        return cls._current_user
