@@ -4,12 +4,13 @@ import psutil
 import subprocess
 import sys
 import time
-from history import histoty_ai
+# from history import histoty_ai
 from login import LoginAI
 from rich import pretty, traceback, console, print
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.prompt import Prompt
+from history import chat_history
 
 
 class Artificial_AI():
@@ -59,10 +60,11 @@ class Artificial_AI():
         self.prompt_response_list = []  # if user decided to add all chat before exit() [['prompt1','response1'],['prompt2','response2']]
         self.last_prompt = None
 
-        self.history_ai = histoty_ai()
-        self.history_ai.my_console = self.my_console
-        self.history_ai.history_dict = self.history_dict
-        self.history_ai.prompt_response_list = self.prompt_response_list
+
+        self.chat_history = chat_history()
+        self.chat_history.my_console = self.my_console
+        self.chat_history.prompt_response_list = self.prompt_response_list
+        self.chat_history.history_dict = self.history_dict
 
         self.connection()
         pass
@@ -78,7 +80,7 @@ class Artificial_AI():
             ollama_server_pid.nice(psutil.REALTIME_PRIORITY_CLASS)  # set as realtime maxed high priority process
 
             ollama_server_pid.cpu_affinity(
-                list(range(threads)))  # bind with no of cores/threads   max thread are fastest
+                list(range(cores)))  # bind with no of cores/threads   max thread are fastest
             # server_process.ionice(ioclass=psutil.IOPRIO_CLASS_RT)  # realtime max i/o priority
 
             self.my_console.print(f"\tcurrent process "
@@ -229,12 +231,13 @@ class Artificial_AI():
 
     def manageLogin(self):
         login_obj = LoginAI()
+        login_obj.create_table()
         if Prompt.ask("are you willing to login", choices=["yes", "no"], default="no") == 'yes':
             self.my_console.print("[bold green]user is trying to login[/bold green]", justify='center')
             username = Prompt.ask("\tenter your username")
             password = Prompt.ask("\tenter your password", password=True)
             if login_obj.login(username, password):
-                self.my_console.print("[bold green]logged in successfully[/bold green]")
+                self.my_console.print(f"[bold green]logged in successfully[/bold green] [red blink]{login_obj.get_username()}[/red blink]")
             else:
                 self.my_console.print("[bold red]login failed[/bold red]")
                 if Prompt.ask("try again", choices=["yes", "no"], default="no") == "yes":
@@ -245,7 +248,7 @@ class Artificial_AI():
             username = Prompt.ask("\tenter your username")
             password = Prompt.ask("\tenter your password", password=True)
             if login_obj.create_account(username, password):
-                self.my_console.print("[bold green]account created successfully[/bold green]")
+                self.my_console.print(f"[bold green]account created successfully[/bold green] [red blink]{login_obj.get_username()}[/red blink]")
             else:
                 self.my_console.print("[bold red]account creation failed[/bold red]")
                 if login_obj.userpresent:
@@ -283,22 +286,16 @@ class Artificial_AI():
             [200, 1500, 2000],
             [True, False]
         ]
-        # implementing log in feature
-
-        # login_ai = LoginAi()
-        # login_ai.check()
 
         temprature = Prompt.ask("Enter the desired output type", choices=choice_get[0], default="strict")
 
         output_length = Prompt.ask("Enter the preferred length of output", choices=choice_get[1], default="short")
 
         # here i have to show the history-previous prompt of the user and give option to add this history of not
-        # history = Prompt.ask("would you like to maintain history", choices=choice_get[2], default="no")
 
-        # self.load_history()
-        # self.show_history()
-        self.history_ai.load_history()
-        self.history_ai.show_history()
+        # new
+        self.chat_history.load_history()
+        self.chat_history.show_history()
 
         self.temp = choice_set[0][choice_get[0].index(temprature)]
         self.max_tockens = choice_set[1][choice_get[1].index(output_length)]
@@ -317,7 +314,8 @@ class Artificial_AI():
             if self.last_prompt is None:  # we will check did user ask something before exit
                 sys.exit()
             else:
-                self.history_ai.dump_history()
+                self.chat_history.dump_history()
+                # self.chat_history.dump_history(self.prompt_response_list)
                 sys.exit()
         else:
             while (True):
