@@ -242,7 +242,7 @@ class Artificial_AI():
                 self.my_console.print("[bold red]login failed[/bold red]")
                 if Prompt.ask("try again", choices=["yes", "no"], default="no") == "yes":
                     self.manageLogin()
-                sys.exit()
+                else:sys.exit()
         else:
             self.my_console.print("[bold green]user is trying to signup[/bold green]", justify='center')
             username = Prompt.ask("\tenter your username")
