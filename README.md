@@ -1,4 +1,4 @@
-# AI Talk - Intelligent Chatbot with Ollama Integration
+# ollama-CLI-AIassistante - Intelligent Chatbot with Ollama Integration
 
 ![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
