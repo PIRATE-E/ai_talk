@@ -1,0 +1,22 @@
+# Core AI/ML libraries
+ollama
+
+# Rich terminal formatting and UI
+rich
+
+# System and process utilities
+psutil
+
+# Standard libraries (included with Python, but listed for reference)
+# atexit - built-in
+# base64 - built-in
+# ctypes - built-in
+# hashlib - built-in
+# json - built-in
+# os - built-in
+# secrets - built-in
+# signal - built-in
+# sqlite3 - built-in
+# subprocess - built-in
+# sys - built-in
+# time - built-in
